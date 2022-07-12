@@ -1,0 +1,57 @@
+# This is a basic workflow to help you get started with Actions
+
+name: databricks-test
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+
+      # Runs a single command using the runners shell
+      - name: Run a one-line script
+        run: echo Hello, world!
+
+      # Runs a set of commands using the runners shell
+      - name: Run ETL function Build
+        uses: databricks/run-notebook@v0
+        with:
+           workspace-notebook-path: "/Users/abraham.pabbathi@databricks.com/00-jobs/build-functions"
+           databricks-host: https://416411475796958.8.gcp.databricks.com
+           databricks-token: ${{ secrets.DATABRICKS_TOKEN }}
+           git-commit: ${{ github.event.pull_request.head.sha }}
+           existing-cluster-id: "0712-214135-fifyt39z"
+      - name: Run ETL job
+        uses: databricks/run-notebook@v0
+        with:
+           workspace-notebook-path: "/Users/abraham.pabbathi@databricks.com/00-jobs/job-test-nb"
+           databricks-host: https://adb-2541733722036151.11.azuredatabricks.net
+           databricks-token: ${{ secrets.DATABRICKS_TOKEN }}
+           git-commit: ${{ github.event.pull_request.head.sha }}
+           libraries-json: >
+            [
+              { "whl": "dbfs:/FileStore/shared_uploads/abraham.pabbathi@databricks.com/etl_functions-0.0.1-py3-none-any.whl" }
+            ]
+           new-cluster-json: >
+            {
+              "num_workers": 1,
+              "spark_version": "10.4.x-scala2.12",
+              "node_type_id": "n1-highmem-4"
+            }
